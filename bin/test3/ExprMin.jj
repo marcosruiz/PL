@@ -1,0 +1,43 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{  //static = true;
+  Ignore_Case = true;
+  Common_Token_Action = true;}PARSER_BEGIN(ExprMin)package test3;
+
+public class ExprMin{  public static void main(String args []) throws ParseException  {    ExprMin anLexSint = new ExprMin(System.in);
+    anLexSint.unaExpresion();
+    System.out.println("\n\nAnalisis terminado:");
+    System.out.println("no se han hallado errores lexico-sintacticos");  }}PARSER_END(ExprMin)
+void unaExpresion():{}{
+  expresion() < EOF >}
+void expresion():
+{}{
+  termino() ("+" termino())*}
+void termino():
+{
+}
+{
+  factor() ("*" factor())*
+}
+void factor():
+{
+}
+{
+  < constante >|< variable >|"(" expresion() ")"
+}
+
+TOKEN_MGR_DECLS:
+{
+  static int numLin = 0;
+  static String linea = "";
+  static void CommonTokenAction(Token pieza)  {	linea = linea + pieza.image;
+  }}SKIP :{<" "|"\r"|"\t">
+{  linea = linea + image;
+}}
+SKIP:
+{
+  "\n"
+  {
+    numLin++;
+    System.out.println(numLin + ":  " + linea);
+    linea = "";  }}TOKEN : /* OPERATORS */{  < variable : ["a"-"z"]>}TOKEN :{  < constante : ["0"-"9"]>}

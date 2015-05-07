@@ -1,0 +1,369 @@
+/**
+ * JavaCC template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */
+options{  static = true;  ignore_case = true;
+}PARSER_BEGIN(minilengcompiler)package minilengcompiler;
+import java.io.*;
+import java.util.*;
+
+public class minilengcompiler{
+  static Token tk;
+  static TablaHash thLex = new TablaHash();
+  static TablaHash thSin = new TablaHash();
+  /*
+   * El nombre del fichero debe ir como ultimo parametro
+   */  public static void main(String args []) throws ParseException{
+    try    {      
+	    int longitud = args.length;
+	    if(longitud == 0 || args[args.length-1].charAt(0) == '-')	    {
+	      	//Entrada estandar	    	minilengcompiler parser = new minilengcompiler(System.in);
+	    	System.out.println("Reading from standard input ...");
+	    }	    else	    {	      	FileInputStream fis = new FileInputStream(args[longitud-1]);
+			minilengcompiler parser = new minilengcompiler(fis);
+			System.out.println("Reading from " + args[longitud-1] + " ...");	    }	      	      try	      {	      	minilengcompiler.Programa();
+	      	/*
+	      	 * Gestion -lex_stats y -syntax-stats
+	      	 */
+	      	
+	      	boolean lex_stats = false;
+	      	boolean syntax_stats = false;
+	      	if(longitud!=0)	      	{				for(int i=0; i<longitud;i++)				{					if(args[i].equals("-lex_stats"))					{						lex_stats = true;
+					}
+					if(args[i].equals("-syntax-stats"))					{						syntax_stats = true;
+					}
+				}
+	      	}
+			String clave, repeticiones;	      	if(lex_stats)	      	{
+				System.out.println("Analisis lexico finalizado sin errores");
+				Enumeration <String> lista = thLex.dameClaves();
+				while(lista.hasMoreElements())				{					clave = lista.nextElement();
+					repeticiones = thLex.leer(clave);
+					System.out.println("Token " + clave + ": reconocido " + repeticiones + " veces");
+				}
+				System.out.println();
+	      	}
+	      	if(syntax_stats)	      	{
+	      	  	Enumeration <String> listaSin = thSin.dameClaves();				System.out.println("Analisis sintactico finalizado sin errores");
+				while(listaSin.hasMoreElements())				{					clave = listaSin.nextElement();
+					repeticiones = thSin.leer(clave);
+					System.out.println("Se han reconocido " + repeticiones + " " + clave);
+				}
+				System.out.println();
+	      	}	      }
+	      catch (TokenMgrError e)	      {	        /*System.out.println("Oops.");	        System.out.println(e.getMessage());*/
+	        if(tk != null)
+	        {
+	        	System.out.println("ERROR LEXICO (" + tk.beginLine + ", " + tk.beginColumn + "): simobolo no reconocido:  " + tk.image +" ");
+				
+	        }
+	        else
+	        {
+				System.out.println("ERROR LEXICO AL COMIENZO DEL PROGRAMA");
+	        }	      }
+	      catch(ParseException e)	      {
+	        System.out.println("ERROR SINTACTICO (" + tk.beginLine + ", " + tk.beginColumn + ")");	      }	    }catch(FileNotFoundException e){
+	        e.printStackTrace();
+		}  }}PARSER_END(minilengcompiler)
+
+SKIP :{  " "| "\r"| "\t"
+| "\n"
+| < tCOMENT : "%"(~["\n","\r"])*("\n"|"\r")>}TOKEN : /* OPERATORS */{  < tPLUS : "+" >| < tMINUS : "-" >| < tMULTIPLY : "*" >| < tDIVIDE : "/" >}TOKEN : /* PALABRAS RESERVADAS */{
+  < tPROGRAMA : "programa" >
+| < tAND : "and" >
+| < tOR : "or" >
+| < tNOT : "not" >
+| < tPRINCIPIO : "principio" >
+| < tFIN : "fin" >
+| < tSI : "si" >
+| < tENT : "ent" >
+| < tSI_NO : "si_no" >
+| < tFSI : "fsi" >
+| < tMQ : "mq" >
+| < tFMQ : "fmq" >
+| < tESCRIBIR : "escribir" >
+| < tLEER : "leer" >
+| < tMOD : "mod" >
+| < tDIV : "div" >
+| < tENTERO : "entero" >
+| < tBOOLEANO : "booleano" >
+| < tCARACTER : "caracter" >
+| < tTRUE : "true" >
+| < tFALSE : "false" >
+| < tENTACAR : "entacar" >
+| < tCARAENT : "caraent" >
+| < tACCION : "accion" >
+| < tVAL : "val" >
+| < tREF : "ref" >
+| < tMAYOR : ">" >
+| < tMENOR : "<" >
+| < tIGUAL : "=" >
+| < tMAI : ">=" >
+| < tMEI : "<=" >
+| < tNI : "<>" >
+| < tOPAS : ":=" >}
+
+TOKEN : /*OTROS*/
+{
+  < tIDENTIFICADOR  : <LETRA>|((<LETRA >|"_")(<LETRA >|< DIGITO >|"_")*(<LETRA >|< DIGITO >)) >
+| < #DIGITO : ["0"-"9"] >
+| < #LETRA : ["a"-"z"] >
+| < tCONST  : (["0"-"9"])+ >
+| < tCAROCAD  : "\""(~["\""])*"\"" >}
+
+TOKEN: /*DELIMITADORES*/
+{
+  < tCOMA : "," >
+| < tPUNTOYCOMA : ";" >
+| < tAPAR : "(" >
+| < tCPAR : ")" >
+| < tACOR : "{" >
+| < tCCOR : "}" >}/*void comienzo() :{}{  (token())+< EOF >}
+void token() :
+{}{
+  tk = <tPLUS> {thLex.insertar("plus");}
+| tk = < tMINUS> {thLex.insertar("minus");}
+| tk = < tMULTIPLY> {thLex.insertar("multiply");}
+| tk = < tDIVIDE> {thLex.insertar("divide");}| tk = < tPROGRAMA > {thLex.insertar("programa");}
+| tk = < tAND > {thLex.insertar("and");}
+| tk = < tOR > {thLex.insertar("or");}
+| tk = < tNOT >  {thLex.insertar("not");}
+| tk = < tPRINCIPIO > {thLex.insertar("principio");}
+| tk = < tFIN > {thLex.insertar("fin");}
+| tk = < tSI > {thLex.insertar("si");}
+| tk = < tENT > {thLex.insertar("ent");}
+| tk = < tSI_NO > {thLex.insertar("sino");}
+| tk = < tFSI > {thLex.insertar("fsi");}
+| tk = < tMQ > {thLex.insertar("mq");}
+| tk = < tFMQ > {thLex.insertar("fmq");}
+| tk = < tESCRIBIR > {thLex.insertar("escribir");}
+| tk = < tLEER > {thLex.insertar("leer");}
+| tk = < tMOD > {thLex.insertar("mod");}
+| tk = < tDIV > {thLex.insertar("div");}
+| tk = < tENTERO > {thLex.insertar("entero");}
+| tk = < tBOOLEANO > {thLex.insertar("booleano");}
+| tk = < tCARACTER > {thLex.insertar("caracter");}
+| tk = < tTRUE > {thLex.insertar("true");}
+| tk = < tFALSE > {thLex.insertar("flase");}
+| tk = < tENTACAR > {thLex.insertar("entacar");}
+| tk = < tCARAENT > {thLex.insertar("caraent");}
+| tk = < tACCION > {thLex.insertar("accion");}
+| tk = < tVAL > {thLex.insertar("val");}
+| tk = < tREF > {thLex.insertar("ref");}
+| tk = < tMAYOR > {thLex.insertar("mayor");}
+| tk = < tMENOR > {thLex.insertar("menor");}
+| tk = < tIGUAL > {thLex.insertar("igual");}
+| tk = < tMAI > {thLex.insertar("mai");}
+| tk = < tMEI > {thLex.insertar("mei");}
+| tk = < tNI > {thLex.insertar("ni");}
+| tk = < tOPAS > {thLex.insertar("opas");}
+| tk = < tIDENTIFICADOR > {thLex.insertar("identificador");}
+| tk = < tCONST > {thLex.insertar("const");}
+| tk = < tCAROCAD > {if(tk.image.length() == 3){
+  thLex.insertar("letra");}else{
+  thLex.insertar("cadena");}
+}
+| tk = < tCOMA > {thLex.insertar("coma");}
+| tk = < tPUNTOYCOMA > {thLex.insertar("puntoycoma");}
+| tk = < tAPAR > {thLex.insertar("apar");}
+| tk = < tCPAR > {thLex.insertar("cpar");}
+| tk = < tACOR > {thLex.insertar("acor");}
+| tk = < tCCOR > {thLex.insertar("ccor");}}*/
+
+void Programa():
+{}{
+  tk = <tPROGRAMA> {thLex.insertar("programa");}
+  tk = <tIDENTIFICADOR> {thLex.insertar("identificador");}
+  tk = <tPUNTOYCOMA>
+  declaracion_variables() declaracion_acciones()
+  bloque_sentencias()}
+
+void declaracion_variables():
+{}
+{   (declaracion() tk = <tPUNTOYCOMA>)*
+}
+
+void declaracion():
+{}
+{
+  tipo_variables() identificadores()
+}
+void tipo_variables():
+{}
+{
+  tk = < tENTERO > {thLex.insertar("entero");}
+  |tk = < tCARACTER > {thLex.insertar("caracter");}
+  |tk = < tBOOLEANO > {thLex.insertar("booleano");}
+}
+void identificadores():
+{}
+{
+ tk = < tIDENTIFICADOR > {thLex.insertar("identificador");} { thSin.insertar("variables");}
+ (tk = < tCOMA > tk = < tIDENTIFICADOR > {thLex.insertar("identificador");} { thSin.insertar("variables");})*
+}
+void declaracion_acciones():
+{}
+{
+  (declaracion_accion())*
+}
+void declaracion_accion():
+{thSin.insertar("funciones");}
+{
+  cabecera_accion() tk = < tPUNTOYCOMA >
+  declaracion_variables() declaracion_acciones() bloque_sentencias()
+}
+void cabecera_accion():
+{}
+{
+  tk = < tACCION > {thLex.insertar("accion");}
+  tk = <tIDENTIFICADOR > {thLex.insertar("identificador");} (parametros_formales())?
+}
+void parametros_formales():
+{}
+{
+  tk = < tAPAR > (parametros() (tk = < tPUNTOYCOMA > parametros())*)? tk = <tCPAR >
+}
+void lista_parametros():
+{}
+{
+  tk = < tIDENTIFICADOR > {thLex.insertar("identificador");}
+  (tk = < tCOMA > tk = <tIDENTIFICADOR > {thLex.insertar("identificador");} )*
+}
+void parametros():
+{}
+{
+  clase_parametros() tipo_variables() lista_parametros()
+}
+void clase_parametros():
+{}
+{
+  tk = < tVAL > {thLex.insertar("val");}|tk = < tREF > {thLex.insertar("ref");}
+}
+void bloque_sentencias():
+{}
+{
+  tk = < tPRINCIPIO > {thLex.insertar("principio");} lista_sentencias() tk = <tFIN > {thLex.insertar("fin");}
+}
+void lista_sentencias():
+{}
+{
+  (sentencia())*
+}
+void sentencia():
+{thSin.insertar("sentencias");}
+{
+  leer() tk = < tPUNTOYCOMA >
+| escribir() tk = < tPUNTOYCOMA >
+| asignacion_o_invocacion()
+| seleccion()
+| mientras_que()
+}
+void leer():
+{}
+{
+  tk = <tLEER> {thLex.insertar("leer");} tk = <tAPAR > lista_asignables() tk = <tCPAR >
+}
+void lista_asignables():
+{}
+{
+  tk = < tIDENTIFICADOR > {thLex.insertar("identificador");} (tk = < tCOMA > tk = <tIDENTIFICADOR > {thLex.insertar("identificador");})*
+}
+void escribir():
+{}
+{
+  tk = <tESCRIBIR> {thLex.insertar("escribir");} tk = <tAPAR > lista_escribibles() tk = <tCPAR >
+}
+void lista_escribibles():
+{}
+{
+  factor() (tk = < tCOMA > factor())*
+}
+void asignacion_o_invocacion():{}{
+  tk = < tIDENTIFICADOR > {thLex.insertar("identificador");} (asignacion() | invocacion_accion())}
+void asignacion():
+{thSin.insertar("asignaciones");}
+{
+  tk = <tOPAS> expresion() tk = <tPUNTOYCOMA >
+}
+void invocacion_accion():
+{{thSin.insertar("invocaciones");}}
+{
+  (argumentos())? tk = <tPUNTOYCOMA >
+}
+void mientras_que():
+{ thSin.insertar("bucles");}
+{
+  tk = <tMQ> {thLex.insertar("mq");} expresion() lista_sentencias() tk = <tFMQ> {thLex.insertar("fmq");}
+}
+void seleccion():
+{thSin.insertar("selecciones");}
+{
+  tk = < tSI > {thLex.insertar("si");} expresion() tk = < tENT > {thLex.insertar("ent");} lista_sentencias()
+  (tk = < tSI_NO > {thLex.insertar("sino");} lista_sentencias())?
+  tk = < tFSI >
+}
+void argumentos():
+{}
+{
+  tk = <tAPAR > ( lista_expresiones() )? tk = <tCPAR >
+}
+void lista_expresiones():
+{}
+{
+  expresion() (tk = < tCOMA > expresion())*
+}
+void expresion():
+{thSin.insertar("expresiones");}
+{
+ expresion_simple() (operador_relacional() expresion_simple())?
+}
+void operador_relacional():
+{}
+{
+  tk = < tMAYOR> {thLex.insertar("mayor");}
+  |tk = < tMENOR> {thLex.insertar("menor");}
+  |tk = < tIGUAL> {thLex.insertar("igual");}
+  |tk = < tMAI> {thLex.insertar("mai");}
+  |tk = < tMEI> {thLex.insertar("mei");}
+  |tk = < tNI> {thLex.insertar("ni");}
+}
+void expresion_simple():
+{}
+{
+  //(< tPLUS >| < tMINUS >)?
+  termino() (operador_aditivo() termino())*
+}
+void operador_aditivo():
+{}
+{
+  tk = < tPLUS > {thLex.insertar("plus");}
+  |tk = <tMINUS > {thLex.insertar("minus");}
+  |tk = <tOR > {thLex.insertar("or");}
+}
+void termino():
+{}
+{
+  factor() (operador_multiplicativo() factor())*
+}
+void operador_multiplicativo():
+{}
+{
+  tk = < tMULTIPLY > {thLex.insertar("multiply");}
+  |tk = <tDIVIDE > {thLex.insertar("divide");}
+  |tk = <tDIV > {thLex.insertar("div");}
+  |tk = <tMOD > {thLex.insertar("mod");}
+  |tk = <tAND >  {thLex.insertar("and");}
+}
+void factor():
+{}
+{
+  tk = < tMINUS > {thLex.insertar("minus");} factor()
+| tk = <tNOT> {thLex.insertar("not");} factor()
+| tk = < tAPAR > expresion() tk = <tCPAR >
+| tk = <tENTACAR> {thLex.insertar("entacar");} tk = < tAPAR > expresion() tk = <tCPAR >
+| tk = <tCARAENT> {thLex.insertar("caraent");} tk = < tAPAR > expresion() tk = <tCPAR >
+| tk = <tIDENTIFICADOR> {thLex.insertar("identificador");}
+| tk = <tCONST> {thLex.insertar("const");}
+| tk = <tCAROCAD> {if(tk.image.length() == 3){thLex.insertar("letra");}else{thLex.insertar("cadena");}}
+| tk = <tTRUE> {thLex.insertar("true");}
+| tk = <tFALSE> {thLex.insertar("false");}
+}

@@ -1,0 +1,331 @@
+/**
+ * JJTree template file created by SF JavaCC plugin 1.5.28+ wizard for JavaCC 1.5.0+
+ */options{  static = true;}PARSER_BEGIN(AnsiC)
+package ansicjtree;
+
+//------------------------------------------------------------------//
+//                        COPYRIGHT NOTICE                          //
+//------------------------------------------------------------------//
+// Copyright (c) 2014, Francisco Javier Fabra Caro                  //
+// All rights reserved.                                             //
+//                                                                  //
+// Redistribution and use in source and binary forms, with or       //
+// without modification, are permitted provided that the following  //
+// conditions are met:                                              //
+//                                                                  //
+// * Redistributions of source code must retain the above copyright //
+//   notice, this list of conditions and the following disclaimer.  // 
+//                                                                  //
+// * Redistributions in binary form must reproduce the above        // 
+//   copyright notice, this list of conditions and the following    // 
+//   disclaimer in the documentation and/or other materials         // 
+//   provided with the distribution.                                //
+//                                                                  //
+// * Neither the name of the University of Huelva nor the names of  //
+//   its contributors may be used to endorse or promote products    //
+//   derived from this software without specific prior written      // 
+//   permission.                                                    //
+//                                                                  //
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND           // 
+// CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES,      // 
+// INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF         // 
+// MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE         // 
+// DISCLAIMED. IN NO EVENT SHALL THE COPRIGHT OWNER OR CONTRIBUTORS //
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,         // 
+// EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED  //
+// TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,    //
+// DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND   // 
+// ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT          //
+// LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING   //
+// IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF   //
+// THE POSSIBILITY OF SUCH DAMAGE.                                  //
+//------------------------------------------------------------------//
+
+//------------------------------------------------------------------//
+//                      Universidad de Zaragoza                     //
+//       Departamento de Informática e Ingeniería de Sistemas       //
+//             Área de Lenguajes y Sistemas Informáticos            //
+//------------------------------------------------------------------//
+//                     PROCESADORES DE LENGUAJE                     //
+//------------------------------------------------------------------//
+//                                                                  //
+//          Compilador de macros de Ansi C                          //
+//                                                                  //
+//------------------------------------------------------------------//
+
+
+import java.io.*;
+
+/**
+ * Analizador léxico de C con tratamiento de las macros "#define", "#ifdef", "#ifndef" y "#endif".
+ * Para ejecutarlo es necesario el comando "java AnsiC fichero.c"
+ */
+public class AnsiC {
+   public static void main(String args[]) {
+      if(args.length == 0) { 
+		System.out.println("Uso: java AnsiC fichero.c");
+		System.exit(0);
+	}
+
+      try { 
+        AnsiC parser = new AnsiC(new FileInputStream(args[0]));
+        parser.entrada();
+      } catch(Exception ex) {
+        System.out.println(ex);
+	}
+   }
+}
+
+PARSER_END(AnsiC)
+
+TOKEN_MGR_DECLS : {
+   private static java.util.Vector definitions = new java.util.Vector();
+}
+
+/* Especificación léxica */
+
+<DEFAULT> SKIP: {
+    "#define" : DEFINE
+  | "#ifdef" : IFDEF
+  | "#ifndef" : IFNDEF
+  | "#endif"
+  | " "
+  | "\n"
+  | "\r"
+  | "\t"
+  |  <"//" (~["\n","\r"])* ("\n" | "\r" | "\r\n")>
+  |  <"/*" (~["*"])* "*" ("*" | ~["*","/"] (~["*"])* "*")* "/">
+}
+
+<DEFINE> SKIP: {
+   <DEFINE_ID: ["a"-"z","A"-"Z","_"] ( ["a"-"z","A"-"Z","_","0"-"9"] )*> { definitions.addElement(image.toString()); }
+ | "\n" : DEFAULT
+ | "\r\n" : DEFAULT
+ | <~[]>
+}
+
+<IFDEF> SKIP: {
+   <IF_ID: ["a"-"z","A"-"Z","_"] ( ["a"-"z","A"-"Z","_","0"-"9"] )*> 
+       { if(!definitions.contains(image.toString())) SwitchTo(IGNORE); else SwitchTo(DEFAULT); }
+ | " "
+ | "\n"
+ | "\r"
+ | "\t"
+}
+
+<IFNDEF> SKIP: {
+   <IFN_ID: ["a"-"z","A"-"Z","_"] ( ["a"-"z","A"-"Z","_","0"-"9"] )*> 
+       { if(definitions.contains(image.toString())) SwitchTo(IGNORE); else SwitchTo(DEFAULT); }
+ | " "
+ | "\n"
+ | "\r"
+ | "\t"
+}
+
+<IGNORE> SKIP: {
+   "#endif" : DEFAULT
+ | <~[]>
+}
+
+<DEFAULT> TOKEN : { /* Literals */
+   <INTEGER_LITERAL: <DECIMAL_LITERAL> (["l","L"])? | <HEX_LITERAL> (["l","L"])? | <OCTAL_LITERAL> (["l","L"])?>
+ | <#DECIMAL_LITERAL: ["1"-"9"] (["0"-"9"])*>
+ | <#HEX_LITERAL: "0" ["x","X"] (["0"-"9","a"-"f","A"-"F"])+>
+ | <#OCTAL_LITERAL: "0" (["0"-"7"])*>
+ | <FLOATING_POINT_LITERAL: (["0"-"9"])+ "." (["0"-"9"])* (<EXPONENT>)? (["f","F","d","D"])? | "." (["0"-"9"])+ (<EXPONENT>)? (["f","F","d","D"])? | (["0"-"9"])+ <EXPONENT> (["f","F","d","D"])? | (["0"-"9"])+ (<EXPONENT>)? ["f","F","d","D"]>
+ | <#EXPONENT: ["e","E"] (["+","-"])? (["0"-"9"])+>
+ | <CHARACTER_LITERAL: "\'" (~["\'","\\","\n","\r"] | "\\" (["n","t","b","r","f","\\","\'","\""] | ["0"-"7"] (["0"-"7"])? | ["0"-"3"] ["0"-"7"] ["0"-"7"])) "\'">
+ | <STRING_LITERAL: "\"" ( ~["\"","\\","\n","\r"] | "\\" ( ["n","t","b","r","f","\\","\'","\""] | ["0"-"7"] (["0"-"7"])?  | ["0"-"3"] ["0"-"7"] ["0"-"7"] | ( ["\n","\r"] | "\r\n")))* "\"">
+}
+
+<DEFAULT> TOKEN : { /* Keywords */
+   <CONTINUE: "continue"> 
+ | <VOLATILE: "volatile">
+ | <REGISTER: "register">
+ | <UNSIGNED: "unsigned">
+ | <TYPEDEF: "typedef">
+ | <DFLT: "default">
+ | <DOUBLE: "double">
+ | <SIZEOF: "sizeof">
+ | <SWITCH: "switch">
+ | <RETURN: "return">
+ | <EXTERN: "extern">
+ | <STRUCT: "struct">
+ | <STATIC: "static">
+ | <SIGNED: "signed">
+ | <WHILE: "while">
+ | <BREAK: "break">
+ | <UNION: "union">
+ | <CONST: "const">
+ | <FLOAT: "float">
+ | <SHORT: "short">
+ | <ELSE: "else">
+ | <CASE: "case">
+ | <LONG: "long">
+ | <ENUM: "enum">
+ | <AUTO: "auto">
+ | <VOID: "void">
+ | <CHAR: "char">
+ | <GOTO: "goto">
+ | <FOR: "for">
+ | <INT: "int">
+ | <IF: "if">
+ | <DO: "do">
+}
+
+<DEFAULT> TOKEN : { /* Identifiers */
+   <IDENTIFIER: <LETTER> (<LETTER> | <DIGIT>)*>
+ | <#LETTER: ["$","A"-"Z","_","a"-"z"]>
+ | <#DIGIT: ["0"-"9"]>
+}
+
+<DEFAULT> TOKEN : { /* Separators */
+   <SEMICOLON: ";">
+ | <LBRACE: "{">
+ | <RBRACE: "}">
+ | <COMMA: ",">
+ | <COLON: ":">
+ | <LPAREN: "(">
+ | <RPAREN: ")">
+ | <LBRACKET: "[">
+ | <RBRACKET: "]">
+}
+
+<DEFAULT> TOKEN : { /* Operators */
+   <STAR: "*">
+ | <DOTS: "...">
+ | <EQ: "=">
+ | <STAR_EQ: "*=">
+ | <SLASH_EQ: "/=">
+ | <PERCENT_EQ: "%=">
+ | <PLUS_EQ: "+=">
+ | <MINUS_EQ: "-=">
+ | <SM_SM_EQ: "<<=">
+ | <GR_GR_EQ: ">>=">
+ | <AND_EQ: "&=">
+ | <OVER_EQ: "^=">
+ | <OR_EQ: "|=">
+ | <HOOK: "?">
+ | <OR_OR: "||">
+ | <AND_AND: "&&">
+ | <OR: "|">
+ | <AND: "&">
+ | <OVER: "^">
+ | <EQ_EQ: "==">
+ | <NOT_EQ: "!=">
+ | <SM: "<">
+ | <GR: ">">
+ | <SM_EQ: "<=">
+ | <GR_EQ: ">=">
+ | <SM_SM: "<<">
+ | <GR_GR: ">>">
+ | <PLUS: "+">
+ | <MINUS: "-">
+ | <SLASH: "/">
+ | <PERCENT: "%">
+ | <PLUS_PLUS: "++">
+ | <MINUS_MINUS: "--">
+ | <COMP: "~">
+ | <NOT: "!">
+ | <DOT: ".">
+ | <ARROW: "->">
+} 
+
+/* Especificación sintáctica */
+
+void entrada() :
+{ Token tk; }
+{
+  ( tk = token() { System.out.println("["+tk.beginLine+","+tk.beginColumn+"] "+tk.image); } )* <EOF>
+}
+
+Token token() :
+{ Token tk = null; }
+{
+ ( tk = <INTEGER_LITERAL>
+ | tk = <FLOATING_POINT_LITERAL>
+ | tk = <CHARACTER_LITERAL>
+ | tk = <STRING_LITERAL>
+ | tk = <CONTINUE> 
+ | tk = <VOLATILE>
+ | tk = <REGISTER>
+ | tk = <UNSIGNED>
+ | tk = <TYPEDEF>
+ | tk = <DFLT>
+ | tk = <DOUBLE>
+ | tk = <SIZEOF>
+ | tk = <SWITCH>
+ | tk = <RETURN>
+ | tk = <EXTERN>
+ | tk = <STRUCT>
+ | tk = <STATIC>
+ | tk = <SIGNED>
+ | tk = <WHILE>
+ | tk = <BREAK>
+ | tk = <UNION>
+ | tk = <CONST>
+ | tk = <FLOAT>
+ | tk = <SHORT>
+ | tk = <ELSE>
+ | tk = <CASE>
+ | tk = <LONG>
+ | tk = <ENUM>
+ | tk = <AUTO>
+ | tk = <VOID>
+ | tk = <CHAR>
+ | tk = <GOTO>
+ | tk = <FOR>
+ | tk = <INT>
+ | tk = <IF>
+ | tk = <DO>
+ | tk = <IDENTIFIER>
+ | tk = <SEMICOLON>
+ | tk = <LBRACE>
+ | tk = <RBRACE>
+ | tk = <COMMA>
+ | tk = <COLON>
+ | tk = <LPAREN>
+ | tk = <RPAREN>
+ | tk = <LBRACKET>
+ | tk = <RBRACKET>
+ | tk = <STAR>
+ | tk = <DOTS>
+ | tk = <EQ>
+ | tk = <STAR_EQ>
+ | tk = <SLASH_EQ>
+ | tk = <PERCENT_EQ>
+ | tk = <PLUS_EQ>
+ | tk = <MINUS_EQ>
+ | tk = <SM_SM_EQ>
+ | tk = <GR_GR_EQ>
+ | tk = <AND_EQ>
+ | tk = <OVER_EQ>
+ | tk = <OR_EQ>
+ | tk = <HOOK>
+ | tk = <OR_OR>
+ | tk = <AND_AND>
+ | tk = <OR>
+ | tk = <AND>
+ | tk = <OVER>
+ | tk = <EQ_EQ>
+ | tk = <NOT_EQ>
+ | tk = <SM>
+ | tk = <GR>
+ | tk = <SM_EQ>
+ | tk = <GR_EQ>
+ | tk = <SM_SM>
+ | tk = <GR_GR>
+ | tk = <PLUS>
+ | tk = <MINUS>
+ | tk = <SLASH>
+ | tk = <PERCENT>
+ | tk = <PLUS_PLUS>
+ | tk = <MINUS_MINUS>
+ | tk = <COMP>
+ | tk = <NOT>
+ | tk = <DOT>
+ | tk = <ARROW> 
+ )
+ { return tk; }
+}
+
